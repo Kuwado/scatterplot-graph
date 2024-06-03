@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scatterplot Graph</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 95vh;
+            width: 100vw;
+        }
+
+        #content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 30px;
+            background-color: aqua;
+            border-radius: 50px 0 50px 0;
+        }
+
+        .dot {
+            fill: #1b337f;
+        }
+
+        .dot:hover {
+            fill: #00ccff;
+        }
+
+        #tooltip {
+            position: absolute;
+            background: #f4f4f4;
+            padding: 10px;
+            border: #333 1px solid;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        <h1 id="title">Doping in Professional Bicycle Racing</h1>
+        <svg id="chart"></svg>
+        <div id="tooltip"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.js"></script>
+    <script>
+        // Fetching and parsing data
+        fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json')
+            .then(response => response.json())
+            .then(data => {
+                // Data processing and visualization code goes here
+                const dataset = data;
+
+                // Set up SVG element
+                const w = 800;
+                const h = 500;
+                const padding = 60;
+
+                const svg = d3.select("#chart")
+                    .attr("width", w)
+                    .attr("height", h);
+
+                // Create scales
+                const xScale = d3.scaleLinear()
+                    .domain([d3.min(dataset, d => d.Year) - 1, d3.max(dataset, d => d.Year) + 1])
+                    .range([padding, w - padding]);
+
+                const yScale = d3.scaleTime()
+                    .domain(d3.extent(dataset, d => new Date(d.Seconds * 1000)))
+                    .range([padding, h - padding]);
+
+                // Create axes
+                const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
+                const yAxis = d3.axisLeft(yScale).tickFormat(d3.timeFormat("%M:%S"));
+
+                svg.append("g")
+                    .attr("id", "x-axis")
+                    .attr("transform", "translate(0," + (h - padding) + ")")
+                    .call(xAxis);
+
+                svg.append("g")
+                    .attr("id", "y-axis")
+                    .attr("transform", "translate(" + padding + ", 0)")
+                    .call(yAxis);
+
+                // Create dots
+                svg.selectAll(".dot")
+                    .data(dataset)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", d => xScale(d.Year))
+                    .attr("cy", d => yScale(new Date(d.Seconds * 1000)))
+                    .attr("r", 5)
+                    .attr("data-xvalue", d => d.Year)
+                    .attr("data-yvalue", d => new Date(d.Seconds * 1000))
+                    .on("mouseover", (event, d) => {
+                        const tooltip = document.getElementById("tooltip");
+                        tooltip.style.display = "block";
+                        tooltip.style.left = event.pageX + "px";
+                        tooltip.style.top = event.pageY + "px";
+                        tooltip.setAttribute("data-year", d.Year);
+                        tooltip.innerHTML = `<p>${d.Name}: ${d.Nationality}</p><p>Year: ${d.Year}, Time: ${d.Time}</p>`;
+                    })
+                    .on("mouseout", () => {
+                        const tooltip = document.getElementById("tooltip");
+                        tooltip.style.display = "none";
+                    });
+            });
+    </script>
+</body>
+
+</html>
